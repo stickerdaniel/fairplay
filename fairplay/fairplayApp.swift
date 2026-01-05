@@ -5,6 +5,8 @@ import SwiftUI
 
 @main
 struct fairplayApp: App {
+    @State private var llmService = LLMService()
+
     init() {
         #if DEBUG
         Bundle(path: "/Applications/InjectionIII.app/Contents/Resources/iOSInjection.bundle")?.load()
@@ -13,7 +15,11 @@ struct fairplayApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(llmService: llmService)
+                .task {
+                    // Load LLM model in background at app launch
+                    llmService.loadModelInBackground()
+                }
         }
     }
 }

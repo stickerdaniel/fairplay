@@ -1,0 +1,52 @@
+import Foundation
+
+protocol DarkPatternScannerProtocol: Sendable {
+    func scan(html: String) async throws -> [DarkPattern]
+}
+
+final class MockDarkPatternScanner: DarkPatternScannerProtocol, Sendable {
+    func scan(html: String) async -> [DarkPattern] {
+        // Simulate 2 second scan
+        try? await Task.sleep(for: .seconds(2))
+
+        // 50% chance of finding patterns
+        let foundPatterns = Bool.random()
+        print("[MockScanner] Scan completed - found patterns: \(foundPatterns)")
+
+        if !foundPatterns {
+            return []
+        }
+
+        // Return demo patterns
+        return [
+            DarkPattern(
+                id: UUID(),
+                type: .hiddenDecline,
+                title: "Hidden Reject Button",
+                description: "The 'Reject All' button has low contrast and smaller text than 'Accept'",
+                elementSelector: ".cookie-banner .reject-btn"
+            ),
+            DarkPattern(
+                id: UUID(),
+                type: .confusingLanguage,
+                title: "Confusing Opt-Out",
+                description: "Double negative language makes it unclear how to decline",
+                elementSelector: ".preferences-modal .opt-out"
+            ),
+            DarkPattern(
+                id: UUID(),
+                type: .preselectedOptions,
+                title: "Pre-checked Marketing",
+                description: "Marketing consent checkbox is pre-selected by default",
+                elementSelector: "#marketing-checkbox"
+            ),
+            DarkPattern(
+                id: UUID(),
+                type: .visualManipulation,
+                title: "Misleading Button Colors",
+                description: "Accept button is bright and prominent while decline is grayed out",
+                elementSelector: ".consent-buttons"
+            ),
+        ]
+    }
+}

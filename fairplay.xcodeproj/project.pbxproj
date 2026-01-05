@@ -10,6 +10,7 @@
 		652A433E2F0BCC9600E90008 /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = 652A433D2F0BCC9600E90008 /* Inject */; };
 		652A43422F0BD60800E90008 /* LocalLLMClient in Frameworks */ = {isa = PBXBuildFile; productRef = 652A43412F0BD60800E90008 /* LocalLLMClient */; };
 		652A43442F0BD60800E90008 /* LocalLLMClientFoundationModels in Frameworks */ = {isa = PBXBuildFile; productRef = 652A43432F0BD60800E90008 /* LocalLLMClientFoundationModels */; };
+		652A43A72F0C0A3700E90008 /* LocalLLMClientLlama in Frameworks */ = {isa = PBXBuildFile; productRef = 652A43A62F0C0A3700E90008 /* LocalLLMClientLlama */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +31,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				652A433E2F0BCC9600E90008 /* Inject in Frameworks */,
+				652A43A72F0C0A3700E90008 /* LocalLLMClientLlama in Frameworks */,
 				652A43442F0BD60800E90008 /* LocalLLMClientFoundationModels in Frameworks */,
 				652A43422F0BD60800E90008 /* LocalLLMClient in Frameworks */,
 			);
@@ -38,10 +40,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		652A435F2F0BE4AF00E90008 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		653933C52F0BC33A0034C8AE = {
 			isa = PBXGroup;
 			children = (
 				653933D02F0BC33A0034C8AE /* fairplay */,
+				652A435F2F0BE4AF00E90008 /* Frameworks */,
 				653933CF2F0BC33A0034C8AE /* Products */,
 			);
 			sourceTree = "<group>";
@@ -77,6 +87,7 @@
 				652A433D2F0BCC9600E90008 /* Inject */,
 				652A43412F0BD60800E90008 /* LocalLLMClient */,
 				652A43432F0BD60800E90008 /* LocalLLMClientFoundationModels */,
+				652A43A62F0C0A3700E90008 /* LocalLLMClientLlama */,
 			);
 			productName = fairplay;
 			productReference = 653933CE2F0BC33A0034C8AE /* fairplay.app */;
@@ -293,6 +304,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_INTEROP_MODE = objcxx;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -326,6 +338,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_INTEROP_MODE = objcxx;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -389,6 +402,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 652A43402F0BD60800E90008 /* XCRemoteSwiftPackageReference "LocalLLMClient" */;
 			productName = LocalLLMClientFoundationModels;
+		};
+		652A43A62F0C0A3700E90008 /* LocalLLMClientLlama */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 652A43402F0BD60800E90008 /* XCRemoteSwiftPackageReference "LocalLLMClient" */;
+			productName = LocalLLMClientLlama;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

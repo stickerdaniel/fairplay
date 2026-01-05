@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Shop</title>
+    <style>
+        body{font-family:system-ui,sans-serif;max-width:400px;margin:0 auto;padding:20px;color:#222}
+        h1{margin:60px 0 20px;font-weight:600}
+        section{border:1px solid #ddd;padding:15px;margin:15px 0;border-radius:8px}
+        p{margin:0 0 10px}
+        button{background:#2563eb;color:#fff;border:none;padding:8px 16px;cursor:pointer;border-radius:9999px}
+        .tiny{background:none;color:#999;font-size:11px;padding:4px}
+        .hidden{background:none;color:rgba(0,0,0,0.05);font-size:10px}
+        .secondary{background:#9ca3af;color:#fff}
+        a{color:#2563eb}
+    </style>
+</head>
+<body>
+    <h1>Shop</h1>
+
+    <section>
+        <p>We use cookies.</p>
+        <button>Accept All</button>
+        <button class="tiny">decline</button>
+    </section>
+
+    <section>
+        <p>Get our newsletter!</p>
+        <button>Subscribe</button>
+        <button class="hidden">No, I don't want emails</button>
+    </section>
+
+    <section>
+        <p>50% Discount!</p>
+        <button class="secondary">Yes, save money!</button>
+        <button class="secondary">No, I prefer paying full price</button>
+    </section>
+
+    <section>
+        <p>LIMITED TIME: <span id="t">04:59</span></p>
+        <p>Only 3 left!</p>
+    </section>
+
+    <section>
+        <p>Preferences</p>
+        <label><input type="checkbox" checked> Send me marketing emails</label><br>
+        <label><input type="checkbox" checked> Share data with partners</label>
+    </section>
+
+    <section>
+        <label><input type="checkbox"> Uncheck to not opt out of marketing</label>
+    </section>
+
+    <script>let s=299;setInterval(()=>{if(s>0)s--;document.getElementById('t').textContent=Math.floor(s/60)+':'+(s%60).toString().padStart(2,'0')},1000)</script>
+</body>
+</html>

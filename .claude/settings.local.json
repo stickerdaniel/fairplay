@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/daniel/Documents/development/swiftui/fairplay status --porcelain)",
+      "Bash(git -C /Users/daniel/Documents/development/swiftui/fairplay diff --name-only)",
+      "WebFetch(domain:forums.swift.org)",
+      "WebFetch(domain:dev.to)",
+      "Bash(vercel --yes:*)",
+      "WebFetch(domain:www.appcoda.com)",
+      "WebFetch(domain:forum.juce.com)",
+      "WebFetch(domain:artemnovichkov.com)"
+    ]
+  }
+}
