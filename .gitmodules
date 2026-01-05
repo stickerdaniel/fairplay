@@ -1,0 +1,3 @@
+[submodule "docs/references/LocalLLMClient"]
+	path = docs/references/LocalLLMClient
+	url = https://github.com/tattn/LocalLLMClient
