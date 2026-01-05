@@ -2,6 +2,7 @@ import Foundation
 import LocalLLMClient
 import LocalLLMClientLlama
 import LocalLLMClientFoundationModels
+import LocalLLMClientMLX
 import FoundationModels
 
 // MARK: - Backend Configuration
@@ -9,6 +10,7 @@ import FoundationModels
 enum LLMBackend: String, CaseIterable {
     case foundationModels = "Foundation Models"
     case llama = "Qwen (llama.cpp)"
+    case mlx = "Qwen (MLX)"
 
     var displayName: String { rawValue }
 
@@ -17,6 +19,7 @@ enum LLMBackend: String, CaseIterable {
         switch self {
         case .foundationModels: return 4096
         case .llama: return 8192
+        case .mlx: return 8192
         }
     }
 
@@ -25,6 +28,7 @@ enum LLMBackend: String, CaseIterable {
         switch self {
         case .foundationModels: return [8000, 4000, 2000]
         case .llama: return [16000, 8000, 4000]
+        case .mlx: return [16000, 8000, 4000]
         }
     }
 
@@ -33,6 +37,7 @@ enum LLMBackend: String, CaseIterable {
         switch self {
         case .foundationModels: return 3000
         case .llama: return 8000
+        case .mlx: return 8000
         }
     }
 
@@ -41,6 +46,37 @@ enum LLMBackend: String, CaseIterable {
         switch self {
         case .foundationModels: return false
         case .llama: return true
+        case .mlx: return true
+        }
+    }
+}
+
+// MARK: - MLX Model Selection
+
+enum MLXModel: String, CaseIterable {
+    case qwen3_4B = "Qwen3 4B"
+    case qwen3_1_7B = "Qwen3 1.7B"
+
+    var displayName: String { rawValue }
+
+    var huggingFaceID: String {
+        switch self {
+        case .qwen3_4B: return "mlx-community/Qwen3-4B-4bit"
+        case .qwen3_1_7B: return "mlx-community/Qwen3-1.7B-4bit"
+        }
+    }
+
+    var memoryGB: Double {
+        switch self {
+        case .qwen3_4B: return 2.75
+        case .qwen3_1_7B: return 1.0
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .qwen3_4B: return "More capable, ~2.75GB"
+        case .qwen3_1_7B: return "Faster, ~1GB"
         }
     }
 }
@@ -55,8 +91,17 @@ final class LLMService {
     /// Toggle between mock data and real LLM
     static var useMockData = false
 
-    /// Selected backend (default: llama for better quality/context)
-    static var backend: LLMBackend = .llama
+    /// Selected backend (reads from UserDefaults, defaults to Foundation Models)
+    static var backend: LLMBackend {
+        let rawValue = UserDefaults.standard.string(forKey: "selectedBackend") ?? LLMBackend.foundationModels.rawValue
+        return LLMBackend(rawValue: rawValue) ?? .foundationModels
+    }
+
+    /// Selected MLX model (reads from UserDefaults, defaults to Qwen3 4B)
+    static var mlxModel: MLXModel {
+        let rawValue = UserDefaults.standard.string(forKey: "selectedMLXModel") ?? MLXModel.qwen3_4B.rawValue
+        return MLXModel(rawValue: rawValue) ?? .qwen3_4B
+    }
 
     // MARK: - State
 
@@ -88,6 +133,10 @@ final class LLMService {
             return
         }
 
+        // Invalidate old session before loading new backend
+        session = nil
+        isReady = false
+
         isLoading = true
         errorMessage = nil
         downloadProgress = 0
@@ -98,6 +147,8 @@ final class LLMService {
                 try await loadFoundationModels()
             case .llama:
                 try await loadLlamaModel()
+            case .mlx:
+                try await loadMLXModel()
             }
             isReady = true
         } catch {
@@ -140,6 +191,31 @@ final class LLMService {
 
         session = LLMSession(model: model)
         print("[LLMService] Qwen2.5-Coder ready")
+    }
+
+    // MARK: - MLX Backend
+
+    private func loadMLXModel() async throws {
+        let selectedModel = Self.mlxModel
+        print("[LLMService] Downloading \(selectedModel.displayName) for MLX...")
+
+        let model = LLMSession.DownloadModel.mlx(
+            id: selectedModel.huggingFaceID,
+            parameter: .init(
+                temperature: 0.3,
+                topP: 0.9
+            )
+        )
+
+        try await model.downloadModel { [weak self] progress in
+            Task { @MainActor in
+                self?.downloadProgress = progress
+                print("[LLMService] Download progress: \(Int(progress * 100))%")
+            }
+        }
+
+        session = LLMSession(model: model)
+        print("[LLMService] \(selectedModel.displayName) (MLX) ready")
     }
 
     // MARK: - Analysis API

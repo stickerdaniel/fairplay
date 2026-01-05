@@ -15,8 +15,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tattn/LocalLLMClient",
       "state" : {
-        "branch" : "main",
-        "revision" : "ff3a9ee35d6136224aadf9346ded5aad2382a3be"
+        "revision" : "9f72d05818f3d9488aef2654cb4cd2e709cef2d9"
       }
     },
     {

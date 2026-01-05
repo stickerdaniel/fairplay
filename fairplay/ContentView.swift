@@ -8,10 +8,11 @@ struct ContentView: View {
     @State private var darkPatternVM: DarkPatternViewModel
     @ObserveInjection var forceRedraw
 
-    // Debug state
+    // Sheet state
     @State private var showDebugHTML = false
     @State private var showDebugResponse = false
     @State private var showErrorAlert = false
+    @State private var showSettings = false
 
     let llmService: LLMService
 
@@ -38,8 +39,10 @@ struct ContentView: View {
             // WebView
             WebView(page)
                 .ignoresSafeArea(edges: .bottom)
-                .overlay(alignment: .bottom) {
-                    debugButtons
+                .overlay(alignment: .bottomTrailing) {
+                    rightSideButtons
+                        .padding()
+                        .safeAreaPadding(.bottom)
                 }
 
             // Top URL Bar
@@ -126,7 +129,10 @@ struct ContentView: View {
             DebugTextSheet(title: "HTML Sent to LLM", content: darkPatternVM.debugHTMLSent)
         }
         .sheet(isPresented: $showDebugResponse) {
-            DebugTextSheet(title: "LLM Response", content: darkPatternVM.debugLLMResponse)
+            DebugTextSheet(title: "LLM Response", content: darkPatternVM.debugLLMResponse, showBackendBadge: true)
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsSheet(llmService: llmService)
         }
         .alert("Scan Failed", isPresented: $showErrorAlert) {
             Button("OK") {}
@@ -212,36 +218,40 @@ struct ContentView: View {
     }
 
     @ViewBuilder
-    private var debugButtons: some View {
-        HStack {
-            // HTML button - bottom left
+    private var rightSideButtons: some View {
+        VStack(spacing: 12) {
+            // HTML Debug
             Button {
                 showDebugHTML = true
             } label: {
                 Image(systemName: "doc.text")
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(darkPatternVM.debugHTMLSent.isEmpty ? .tertiary : .secondary)
-                    .frame(width: 44, height: 44)
+                    .frame(width: 40, height: 40)
                     .glassEffect(.regular.interactive(), in: .circle)
             }
             .disabled(darkPatternVM.debugHTMLSent.isEmpty)
 
-            Spacer()
-
-            // LLM Response button - bottom right
+            // LLM Response Debug
             Button {
                 showDebugResponse = true
             } label: {
                 Image(systemName: "text.bubble")
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(darkPatternVM.debugLLMResponse.isEmpty ? .tertiary : .secondary)
-                    .frame(width: 44, height: 44)
+                    .frame(width: 40, height: 40)
                     .glassEffect(.regular.interactive(), in: .circle)
             }
             .disabled(darkPatternVM.debugLLMResponse.isEmpty)
+
+            // Settings
+            Button {
+                showSettings = true
+            } label: {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 16, weight: .medium))
+                    .frame(width: 40, height: 40)
+                    .glassEffect(.regular.interactive(), in: .circle)
+            }
         }
-        .padding(.horizontal)
-        .safeAreaPadding(.bottom)
     }
 
     private func loadURL() {
