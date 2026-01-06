@@ -14,10 +14,22 @@ enum ScanError: LocalizedError {
     }
 }
 
-struct ChunkAttempt: Identifiable {
-    let id = UUID()
+struct ChunkAttempt: Identifiable, Sendable {
+    let id: UUID
     let size: Int
-    let succeeded: Bool
+    var status: Status
+
+    enum Status: Sendable {
+        case running
+        case succeeded
+        case failed
+    }
+
+    init(size: Int, status: Status = .running) {
+        self.id = UUID()
+        self.size = size
+        self.status = status
+    }
 }
 
 /// LLM-powered implementation of dark pattern detection (Stage 1)
@@ -44,7 +56,10 @@ final class DarkPatternLLMScanner: DarkPatternScannerProtocol {
         self.llmService = llmService
     }
 
-    func scan(html: String) async throws -> [DarkPattern] {
+    func scan(
+        html: String,
+        onProgress: (@MainActor @Sendable (ScanProgressEvent) -> Void)? = nil
+    ) async throws -> [DarkPattern] {
         // Try progressively smaller HTML chunks to fit context window
         // Chunk sizes are backend-specific (llama has larger context than Foundation Models)
         let chunkSizes = LLMService.backend.scannerChunkSizes
@@ -56,18 +71,43 @@ final class DarkPatternLLMScanner: DarkPatternScannerProtocol {
             let truncatedHTML = String(html.prefix(chunkSize))
             lastHTMLSent = truncatedHTML
 
+            // Report input is ready and chunk started BEFORE calling LLM
+            await onProgress?(.inputPrepared(html: truncatedHTML, originalSize: html.count))
+            await onProgress?(.chunkStarted(size: chunkSize))
+
+            // Track running attempt
+            let attempt = ChunkAttempt(size: chunkSize, status: .running)
+            chunkAttempts.append(attempt)
+
             let prompt = userPromptTemplate.replacingOccurrences(of: "%HTML%", with: truncatedHTML)
 
             do {
                 let response = try await llmService.analyze(content: prompt, systemPrompt: systemPrompt)
                 lastRawResponse = response
-                chunkAttempts.append(ChunkAttempt(size: chunkSize, succeeded: true))
+
+                // Update attempt status to succeeded
+                if let index = chunkAttempts.firstIndex(where: { $0.id == attempt.id }) {
+                    chunkAttempts[index].status = .succeeded
+                }
+
+                // Report chunk success and response received
+                await onProgress?(.chunkCompleted(size: chunkSize, succeeded: true))
+                await onProgress?(.responseReceived(response))
+
                 let result = try parsePatterns(from: response)
                 lastReasoning = result.reasoning
                 return result.patterns
             } catch {
                 lastError = error
-                chunkAttempts.append(ChunkAttempt(size: chunkSize, succeeded: false))
+
+                // Update attempt status to failed
+                if let index = chunkAttempts.firstIndex(where: { $0.id == attempt.id }) {
+                    chunkAttempts[index].status = .failed
+                }
+
+                // Report chunk failure
+                await onProgress?(.chunkCompleted(size: chunkSize, succeeded: false))
+
                 // Don't overwrite lastRawResponse - keep the actual LLM response for debugging
                 print("[DarkPatternLLMScanner] Attempt with \(chunkSize) chars failed: \(error)")
             }

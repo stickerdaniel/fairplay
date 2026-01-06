@@ -36,22 +36,39 @@ final class DarkPatternViewModel {
         resetForNewPage()
         currentPageHTML = html
         scanState = .scanning
+        originalHTMLSize = html.count
 
         // Capture which backend/model is being used for this scan
         usedBackend = LLMService.backend
         usedMLXModel = usedBackend == .mlx ? LLMService.mlxModel : nil
 
         do {
-            let foundPatterns = try await scanner.scan(html: html)
+            let foundPatterns = try await scanner.scan(html: html) { [weak self] event in
+                guard let self else { return }
+                switch event {
+                case .inputPrepared(let sentHtml, let originalSize):
+                    self.debugHTMLSent = sentHtml
+                    self.originalHTMLSize = originalSize
+                    self.sentHTMLSize = sentHtml.count
 
-            // Capture debug data from LLM scanner
+                case .chunkStarted(let size):
+                    // Add new attempt with running status
+                    self.chunkAttempts.append(ChunkAttempt(size: size, status: .running))
+
+                case .chunkCompleted(let size, let succeeded):
+                    // Update the existing attempt's status
+                    if let index = self.chunkAttempts.lastIndex(where: { $0.size == size }) {
+                        self.chunkAttempts[index].status = succeeded ? .succeeded : .failed
+                    }
+
+                case .responseReceived(let response):
+                    self.debugLLMResponse = response
+                }
+            }
+
+            // Capture reasoning from scanner
             if let llmScanner = scanner as? DarkPatternLLMScanner {
-                debugHTMLSent = llmScanner.lastHTMLSent
-                debugLLMResponse = llmScanner.lastRawResponse
                 reasoning = llmScanner.lastReasoning
-                originalHTMLSize = html.count
-                sentHTMLSize = llmScanner.lastHTMLSent.count
-                chunkAttempts = llmScanner.chunkAttempts
             }
 
             patterns = foundPatterns
@@ -66,14 +83,9 @@ final class DarkPatternViewModel {
                 }
             }
         } catch {
-            // Capture debug data even on error
+            // Capture reasoning even on error
             if let llmScanner = scanner as? DarkPatternLLMScanner {
-                debugHTMLSent = llmScanner.lastHTMLSent
-                debugLLMResponse = llmScanner.lastRawResponse
                 reasoning = llmScanner.lastReasoning
-                originalHTMLSize = html.count
-                sentHTMLSize = llmScanner.lastHTMLSent.count
-                chunkAttempts = llmScanner.chunkAttempts
             }
 
             scanState = .error(error.localizedDescription)

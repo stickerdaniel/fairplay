@@ -49,14 +49,19 @@ struct DebugTextSheet: View {
                                     .foregroundStyle(.orange)
                             }
 
-                            // Chunk attempt badges (red=failed, green=succeeded)
+                            // Chunk attempt badges (grey=running, green=succeeded, red=failed)
                             ForEach(chunkAttempts) { attempt in
+                                let (bgColor, fgColor): (Color, Color) = switch attempt.status {
+                                case .running: (.secondary.opacity(0.15), .secondary)
+                                case .succeeded: (.green.opacity(0.15), .green)
+                                case .failed: (.red.opacity(0.15), .red)
+                                }
                                 Text("\(attempt.size / 1000)K")
                                     .font(.caption.weight(.medium))
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 5)
-                                    .background(attempt.succeeded ? .green.opacity(0.15) : .red.opacity(0.15), in: .capsule)
-                                    .foregroundStyle(attempt.succeeded ? .green : .red)
+                                    .background(bgColor, in: .capsule)
+                                    .foregroundStyle(fgColor)
                             }
                         }
                     }

@@ -1,11 +1,25 @@
 import Foundation
 
+/// Progress events emitted during scanning
+enum ScanProgressEvent: Sendable {
+    case inputPrepared(html: String, originalSize: Int)
+    case chunkStarted(size: Int)
+    case chunkCompleted(size: Int, succeeded: Bool)
+    case responseReceived(String)
+}
+
 protocol DarkPatternScannerProtocol: Sendable {
-    func scan(html: String) async throws -> [DarkPattern]
+    func scan(
+        html: String,
+        onProgress: (@MainActor @Sendable (ScanProgressEvent) -> Void)?
+    ) async throws -> [DarkPattern]
 }
 
 final class MockDarkPatternScanner: DarkPatternScannerProtocol, Sendable {
-    func scan(html: String) async -> [DarkPattern] {
+    func scan(
+        html: String,
+        onProgress: (@MainActor @Sendable (ScanProgressEvent) -> Void)? = nil
+    ) async -> [DarkPattern] {
         // Simulate 2 second scan
         try? await Task.sleep(for: .seconds(2))
 
