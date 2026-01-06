@@ -11,6 +11,7 @@ struct ContentView: View {
     // Sheet state
     @State private var showDebugHTML = false
     @State private var showDebugResponse = false
+    @State private var showReasoningAlert = false
     @State private var showErrorAlert = false
     @State private var showSettings = false
 
@@ -80,7 +81,12 @@ struct ContentView: View {
                         } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundStyle(.secondary)
+                                .padding(.leading, 12)
+                                .padding(.vertical, 8)
+                                .contentShape(Rectangle())
                         }
+                        .buttonStyle(.plain)
+                        .padding(.vertical, -8)
                     } else if page.isLoading {
                         ProgressView()
                             .scaleEffect(0.7)
@@ -126,13 +132,31 @@ struct ContentView: View {
             DarkPatternsSheet(viewModel: darkPatternVM)
         }
         .sheet(isPresented: $showDebugHTML) {
-            DebugTextSheet(title: "HTML Sent to LLM", content: darkPatternVM.debugHTMLSent)
+            DebugTextSheet(
+                title: "HTML Sent to LLM",
+                content: darkPatternVM.debugHTMLSent,
+                htmlPercentage: darkPatternVM.originalHTMLSize > 0
+                    ? (darkPatternVM.sentHTMLSize * 100) / darkPatternVM.originalHTMLSize
+                    : 0,
+                chunkAttempts: darkPatternVM.chunkAttempts
+            )
         }
         .sheet(isPresented: $showDebugResponse) {
-            DebugTextSheet(title: "LLM Response", content: darkPatternVM.debugLLMResponse, showBackendBadge: true)
+            DebugTextSheet(
+                title: "LLM Response",
+                content: darkPatternVM.debugLLMResponse,
+                showBackendBadge: true,
+                usedBackend: darkPatternVM.usedBackend,
+                usedMLXModel: darkPatternVM.usedMLXModel
+            )
         }
         .sheet(isPresented: $showSettings) {
             SettingsSheet(llmService: llmService)
+        }
+        .alert("No Dark Patterns Found", isPresented: $showReasoningAlert) {
+            Button("OK") {}
+        } message: {
+            Text(darkPatternVM.reasoning)
         }
         .alert("Scan Failed", isPresented: $showErrorAlert) {
             Button("OK") {}
@@ -150,6 +174,8 @@ struct ContentView: View {
             switch darkPatternVM.scanState {
             case .patternsFound:
                 darkPatternVM.isSheetPresented = true
+            case .safe:
+                showReasoningAlert = true
             case .error:
                 showErrorAlert = true
             default:
@@ -163,8 +189,8 @@ struct ContentView: View {
                         .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(.secondary)
                 } else if page.isLoading {
-                    // Page loading - show clock
-                    Image(systemName: "clock")
+                    // Page loading - show hourglass
+                    Image(systemName: "hourglass")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(.secondary)
                 } else {
@@ -213,7 +239,6 @@ struct ContentView: View {
                   page.url == nil ||
                   darkPatternVM.scanState == .idle ||
                   darkPatternVM.scanState == .scanning ||
-                  darkPatternVM.scanState == .safe ||
                   darkPatternVM.scanState == .excluded)
     }
 

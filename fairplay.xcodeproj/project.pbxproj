@@ -10,7 +10,6 @@
 		652A433E2F0BCC9600E90008 /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = 652A433D2F0BCC9600E90008 /* Inject */; };
 		652A43422F0BD60800E90008 /* LocalLLMClient in Frameworks */ = {isa = PBXBuildFile; productRef = 652A43412F0BD60800E90008 /* LocalLLMClient */; };
 		652A43442F0BD60800E90008 /* LocalLLMClientFoundationModels in Frameworks */ = {isa = PBXBuildFile; productRef = 652A43432F0BD60800E90008 /* LocalLLMClientFoundationModels */; };
-		652A43A72F0C0A3700E90008 /* LocalLLMClientLlama in Frameworks */ = {isa = PBXBuildFile; productRef = 652A43A62F0C0A3700E90008 /* LocalLLMClientLlama */; };
 		652A43AD2F0C57D200E90008 /* LocalLLMClientMLX in Frameworks */ = {isa = PBXBuildFile; productRef = 652A43AC2F0C57D200E90008 /* LocalLLMClientMLX */; };
 /* End PBXBuildFile section */
 
@@ -32,7 +31,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				652A433E2F0BCC9600E90008 /* Inject in Frameworks */,
-				652A43A72F0C0A3700E90008 /* LocalLLMClientLlama in Frameworks */,
 				652A43442F0BD60800E90008 /* LocalLLMClientFoundationModels in Frameworks */,
 				652A43AD2F0C57D200E90008 /* LocalLLMClientMLX in Frameworks */,
 				652A43422F0BD60800E90008 /* LocalLLMClient in Frameworks */,
@@ -89,7 +87,6 @@
 				652A433D2F0BCC9600E90008 /* Inject */,
 				652A43412F0BD60800E90008 /* LocalLLMClient */,
 				652A43432F0BD60800E90008 /* LocalLLMClientFoundationModels */,
-				652A43A62F0C0A3700E90008 /* LocalLLMClientLlama */,
 				652A43AC2F0C57D200E90008 /* LocalLLMClientMLX */,
 			);
 			productName = fairplay;
@@ -281,6 +278,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = fairplay/fairplay.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = GJ7437P4UH;
@@ -319,6 +317,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = fairplay/fairplay.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = GJ7437P4UH;
@@ -405,11 +404,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 652A43402F0BD60800E90008 /* XCRemoteSwiftPackageReference "LocalLLMClient" */;
 			productName = LocalLLMClientFoundationModels;
-		};
-		652A43A62F0C0A3700E90008 /* LocalLLMClientLlama */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 652A43402F0BD60800E90008 /* XCRemoteSwiftPackageReference "LocalLLMClient" */;
-			productName = LocalLLMClientLlama;
 		};
 		652A43AC2F0C57D200E90008 /* LocalLLMClientMLX */ = {
 			isa = XCSwiftPackageProductDependency;

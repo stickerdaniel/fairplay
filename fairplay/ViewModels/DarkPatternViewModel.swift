@@ -12,6 +12,12 @@ final class DarkPatternViewModel {
     // Debug properties
     private(set) var debugHTMLSent: String = ""
     private(set) var debugLLMResponse: String = ""
+    private(set) var reasoning: String = ""
+    private(set) var originalHTMLSize: Int = 0
+    private(set) var sentHTMLSize: Int = 0
+    private(set) var usedBackend: LLMBackend = .foundationModels
+    private(set) var usedMLXModel: MLXModel? = nil
+    private(set) var chunkAttempts: [ChunkAttempt] = []
 
     private let scanner: DarkPatternScannerProtocol
     private let modifier: PatternModifierProtocol
@@ -31,6 +37,10 @@ final class DarkPatternViewModel {
         currentPageHTML = html
         scanState = .scanning
 
+        // Capture which backend/model is being used for this scan
+        usedBackend = LLMService.backend
+        usedMLXModel = usedBackend == .mlx ? LLMService.mlxModel : nil
+
         do {
             let foundPatterns = try await scanner.scan(html: html)
 
@@ -38,6 +48,10 @@ final class DarkPatternViewModel {
             if let llmScanner = scanner as? DarkPatternLLMScanner {
                 debugHTMLSent = llmScanner.lastHTMLSent
                 debugLLMResponse = llmScanner.lastRawResponse
+                reasoning = llmScanner.lastReasoning
+                originalHTMLSize = html.count
+                sentHTMLSize = llmScanner.lastHTMLSent.count
+                chunkAttempts = llmScanner.chunkAttempts
             }
 
             patterns = foundPatterns
@@ -56,6 +70,10 @@ final class DarkPatternViewModel {
             if let llmScanner = scanner as? DarkPatternLLMScanner {
                 debugHTMLSent = llmScanner.lastHTMLSent
                 debugLLMResponse = llmScanner.lastRawResponse
+                reasoning = llmScanner.lastReasoning
+                originalHTMLSize = html.count
+                sentHTMLSize = llmScanner.lastHTMLSent.count
+                chunkAttempts = llmScanner.chunkAttempts
             }
 
             scanState = .error(error.localizedDescription)
@@ -142,6 +160,12 @@ final class DarkPatternViewModel {
         currentPageHTML = ""
         debugHTMLSent = ""
         debugLLMResponse = ""
+        reasoning = ""
+        originalHTMLSize = 0
+        sentHTMLSize = 0
+        usedBackend = .foundationModels
+        usedMLXModel = nil
+        chunkAttempts = []
     }
 
     // Computed property for applied count (useful for UI)

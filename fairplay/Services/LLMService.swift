@@ -1,6 +1,5 @@
 import Foundation
 import LocalLLMClient
-import LocalLLMClientLlama
 import LocalLLMClientFoundationModels
 import LocalLLMClientMLX
 import FoundationModels
@@ -9,7 +8,6 @@ import FoundationModels
 
 enum LLMBackend: String, CaseIterable {
     case foundationModels = "Foundation Models"
-    case llama = "Qwen (llama.cpp)"
     case mlx = "Qwen (MLX)"
 
     var displayName: String { rawValue }
@@ -18,8 +16,7 @@ enum LLMBackend: String, CaseIterable {
     var maxContextTokens: Int {
         switch self {
         case .foundationModels: return 4096
-        case .llama: return 8192
-        case .mlx: return 8192
+        case .mlx: return 32768  // Qwen3 supports 32K context
         }
     }
 
@@ -27,8 +24,7 @@ enum LLMBackend: String, CaseIterable {
     var scannerChunkSizes: [Int] {
         switch self {
         case .foundationModels: return [8000, 4000, 2000]
-        case .llama: return [16000, 8000, 4000]
-        case .mlx: return [16000, 8000, 4000]
+        case .mlx: return [64000, 32000, 16000]  // Leverage full Qwen3 context
         }
     }
 
@@ -36,8 +32,7 @@ enum LLMBackend: String, CaseIterable {
     var modifierHTMLLimit: Int {
         switch self {
         case .foundationModels: return 3000
-        case .llama: return 8000
-        case .mlx: return 8000
+        case .mlx: return 32000  // Larger context for modifications
         }
     }
 
@@ -45,7 +40,6 @@ enum LLMBackend: String, CaseIterable {
     var requiresDownload: Bool {
         switch self {
         case .foundationModels: return false
-        case .llama: return true
         case .mlx: return true
         }
     }
@@ -145,8 +139,6 @@ final class LLMService {
             switch Self.backend {
             case .foundationModels:
                 try await loadFoundationModels()
-            case .llama:
-                try await loadLlamaModel()
             case .mlx:
                 try await loadMLXModel()
             }
@@ -165,32 +157,6 @@ final class LLMService {
         print("[LLMService] Loading Apple Foundation Models...")
         session = LLMSession(model: .foundationModels())
         print("[LLMService] Foundation Models ready")
-    }
-
-    // MARK: - llama.cpp Backend
-
-    private func loadLlamaModel() async throws {
-        print("[LLMService] Downloading Qwen2.5-Coder-3B...")
-
-        let model = LLMSession.DownloadModel.llama(
-            id: "Qwen/Qwen2.5-Coder-3B-Instruct-GGUF",
-            model: "qwen2.5-coder-3b-instruct-q4_k_m.gguf",
-            parameter: .init(
-                context: 8192,
-                temperature: 0.3,
-                topP: 0.9
-            )
-        )
-
-        try await model.downloadModel { [weak self] progress in
-            Task { @MainActor in
-                self?.downloadProgress = progress
-                print("[LLMService] Download progress: \(Int(progress * 100))%")
-            }
-        }
-
-        session = LLMSession(model: model)
-        print("[LLMService] Qwen2.5-Coder ready")
     }
 
     // MARK: - MLX Backend

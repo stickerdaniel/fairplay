@@ -38,6 +38,34 @@ struct SettingsSheet: View {
                     }
                 }
 
+                // Backend Configuration (read-only info)
+                Section("Backend Configuration") {
+                    let backend = LLMBackend(rawValue: selectedBackend) ?? .foundationModels
+
+                    LabeledContent("Max Context") {
+                        Text("\(backend.maxContextTokens.formatted()) tokens")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    LabeledContent("Scanner Chunk Sizes") {
+                        Text(backend.scannerChunkSizes.map { "\($0 / 1000)K chars" }.joined(separator: ", "))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    LabeledContent("Modifier HTML Limit") {
+                        Text("\(backend.modifierHTMLLimit.formatted()) chars")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if backend == .mlx {
+                        let model = MLXModel(rawValue: selectedMLXModel) ?? .qwen3_4B
+                        LabeledContent("Model Memory") {
+                            Text("~\(model.memoryGB, specifier: "%.1f") GB")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
                 // Scanner System Prompt
                 Section {
                     TextEditor(text: $scannerSystemPrompt)

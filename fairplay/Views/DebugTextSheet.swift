@@ -4,19 +4,61 @@ struct DebugTextSheet: View {
     let title: String
     let content: String
     var showBackendBadge: Bool = false
+    var htmlPercentage: Int = 0
+    var usedBackend: LLMBackend? = nil
+    var usedMLXModel: MLXModel? = nil
+    var chunkAttempts: [ChunkAttempt] = []
     @Environment(\.dismiss) private var dismiss
+
+    private var hasBadges: Bool {
+        (showBackendBadge && usedBackend != nil) || htmlPercentage > 0 || !chunkAttempts.isEmpty
+    }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    if showBackendBadge {
-                        Text(LLMService.backend.displayName)
-                            .font(.caption.weight(.medium))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(.blue.opacity(0.15), in: .capsule)
-                            .foregroundStyle(.blue)
+                    if hasBadges {
+                        HStack(spacing: 8) {
+                            // Backend badges (only if showBackendBadge)
+                            if showBackendBadge, let backend = usedBackend {
+                                Text(backend.displayName)
+                                    .font(.caption.weight(.medium))
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(.blue.opacity(0.15), in: .capsule)
+                                    .foregroundStyle(.blue)
+
+                                if backend == .mlx, let model = usedMLXModel {
+                                    Text(model.displayName)
+                                        .font(.caption.weight(.medium))
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 5)
+                                        .background(.purple.opacity(0.15), in: .capsule)
+                                        .foregroundStyle(.purple)
+                                }
+                            }
+
+                            // Percentage badge (always show if > 0)
+                            if htmlPercentage > 0 {
+                                Text("\(htmlPercentage)%")
+                                    .font(.caption.weight(.medium))
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(.orange.opacity(0.15), in: .capsule)
+                                    .foregroundStyle(.orange)
+                            }
+
+                            // Chunk attempt badges (red=failed, green=succeeded)
+                            ForEach(chunkAttempts) { attempt in
+                                Text("\(attempt.size / 1000)K")
+                                    .font(.caption.weight(.medium))
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(attempt.succeeded ? .green.opacity(0.15) : .red.opacity(0.15), in: .capsule)
+                                    .foregroundStyle(attempt.succeeded ? .green : .red)
+                            }
+                        }
                     }
 
                     Text(content)

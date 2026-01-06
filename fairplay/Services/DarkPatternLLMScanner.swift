@@ -14,6 +14,12 @@ enum ScanError: LocalizedError {
     }
 }
 
+struct ChunkAttempt: Identifiable {
+    let id = UUID()
+    let size: Int
+    let succeeded: Bool
+}
+
 /// LLM-powered implementation of dark pattern detection (Stage 1)
 /// Identifies manipulative patterns without modifying - modification happens in Stage 2
 @MainActor
@@ -23,6 +29,8 @@ final class DarkPatternLLMScanner: DarkPatternScannerProtocol {
     // Debug: store last request/response for inspection
     private(set) var lastHTMLSent: String = ""
     private(set) var lastRawResponse: String = ""
+    private(set) var lastReasoning: String = ""
+    private(set) var chunkAttempts: [ChunkAttempt] = []
 
     private var systemPrompt: String {
         UserDefaults.standard.string(forKey: "scannerSystemPrompt") ?? ScannerPrompts.defaultSystem
@@ -42,6 +50,7 @@ final class DarkPatternLLMScanner: DarkPatternScannerProtocol {
         let chunkSizes = LLMService.backend.scannerChunkSizes
         var lastError: Error?
         lastRawResponse = ""
+        chunkAttempts = []
 
         for chunkSize in chunkSizes {
             let truncatedHTML = String(html.prefix(chunkSize))
@@ -52,9 +61,13 @@ final class DarkPatternLLMScanner: DarkPatternScannerProtocol {
             do {
                 let response = try await llmService.analyze(content: prompt, systemPrompt: systemPrompt)
                 lastRawResponse = response
-                return try parsePatterns(from: response)
+                chunkAttempts.append(ChunkAttempt(size: chunkSize, succeeded: true))
+                let result = try parsePatterns(from: response)
+                lastReasoning = result.reasoning
+                return result.patterns
             } catch {
                 lastError = error
+                chunkAttempts.append(ChunkAttempt(size: chunkSize, succeeded: false))
                 // Don't overwrite lastRawResponse - keep the actual LLM response for debugging
                 print("[DarkPatternLLMScanner] Attempt with \(chunkSize) chars failed: \(error)")
             }
@@ -63,7 +76,7 @@ final class DarkPatternLLMScanner: DarkPatternScannerProtocol {
         throw lastError ?? ScanError.allAttemptsFailed
     }
 
-    nonisolated private func parsePatterns(from response: String) throws -> [DarkPattern] {
+    nonisolated private func parsePatterns(from response: String) throws -> (patterns: [DarkPattern], reasoning: String) {
         // Extract JSON from response (handle potential markdown code blocks)
         var jsonString = response.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -88,7 +101,7 @@ final class DarkPatternLLMScanner: DarkPatternScannerProtocol {
         do {
             let decoded = try JSONDecoder().decode(LLMReasoningResponse.self, from: data)
             print("[DarkPatternLLMScanner] Reasoning: \(decoded.reasoning.prefix(200))...")
-            return decoded.patterns.map { response in
+            let patterns = decoded.patterns.map { response in
                 DarkPattern(
                     id: UUID(),
                     type: mapPatternType(response.type),
@@ -97,6 +110,7 @@ final class DarkPatternLLMScanner: DarkPatternScannerProtocol {
                     elementSelector: response.selector
                 )
             }
+            return (patterns, decoded.reasoning)
         } catch {
             print("[DarkPatternLLMScanner] JSON parsing failed: \(error)")
             print("[DarkPatternLLMScanner] Raw response: \(jsonString.prefix(500))...")
@@ -105,14 +119,18 @@ final class DarkPatternLLMScanner: DarkPatternScannerProtocol {
     }
 
     /// Sanitize JSON string to handle common LLM output issues
+    /// - Fixes Qwen's missing opening quote on evidence fields
     /// - Escapes literal newlines inside string values
     /// - Handles control characters
     nonisolated private func sanitizeJSON(_ json: String) -> String {
+        // Fix Qwen's missing opening quote on evidence fields: "evidence":< → "evidence": "<
+        var sanitized = json.replacingOccurrences(of: "\"evidence\":<", with: "\"evidence\": \"<")
+
         var result = ""
         var insideString = false
         var previousChar: Character = " "
 
-        for char in json {
+        for char in sanitized {
             if char == "\"" && previousChar != "\\" {
                 insideString.toggle()
                 result.append(char)
