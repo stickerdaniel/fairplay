@@ -6,7 +6,7 @@ An iOS app experiment that uses on-device LLMs to detect and neutralize dark pat
 
 - **Dark Pattern Detection** - Identify manipulative UI patterns like hidden decline buttons, fake urgency timers, and confusing opt-out flows
 - **On-Device Processing** - All analysis runs locally using Apple Foundation Models or MLX - no data leaves your device
-- **Real-Time Sanitization** - Extract page HTML, analyze with LLM, inject cleaned HTML back into the WebView
+- **Sanitization** - Extract page HTML, analyze with LLM, let user select what to fix and generate js that removes the dark patterns
 
 ## Limitations
 
