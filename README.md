@@ -45,9 +45,13 @@ WebView loads page
        ↓
 Extract HTML via JavaScript
        ↓
-Send to on-device LLM
+Send to on-device LLM for classification
        ↓
-Inject sanitized HTML back
+User selects what to fix
+       ↓
+Send to on-device LLM to generate fix for specific pattern
+       ↓
+Run js that applies the changes
 ```
 
 **LLM Backend:** [LocalLLMClient](https://github.com/tattn/LocalLLMClient) provides a unified interface for:
