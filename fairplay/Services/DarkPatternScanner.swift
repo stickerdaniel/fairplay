@@ -32,35 +32,45 @@ final class MockDarkPatternScanner: DarkPatternScannerProtocol, Sendable {
         }
 
         // Return demo patterns
-        return [
-            DarkPattern(
+        var patterns: [DarkPattern] = []
+
+        if let category = CategoryLoader.category(forId: "hidden_information") {
+            patterns.append(DarkPattern(
                 id: UUID(),
-                type: .hiddenDecline,
+                category: category,
                 title: "Hidden Reject Button",
                 description: "The 'Reject All' button has low contrast and smaller text than 'Accept'",
                 elementSelector: ".cookie-banner .reject-btn"
-            ),
-            DarkPattern(
+            ))
+        }
+        if let category = CategoryLoader.category(forId: "confirmshaming") {
+            patterns.append(DarkPattern(
                 id: UUID(),
-                type: .confusingLanguage,
-                title: "Confusing Opt-Out",
+                category: category,
+                title: "Guilt Trip Text",
                 description: "Double negative language makes it unclear how to decline",
                 elementSelector: ".preferences-modal .opt-out"
-            ),
-            DarkPattern(
+            ))
+        }
+        if let category = CategoryLoader.category(forId: "preselected_options") {
+            patterns.append(DarkPattern(
                 id: UUID(),
-                type: .preselectedOptions,
+                category: category,
                 title: "Pre-checked Marketing",
                 description: "Marketing consent checkbox is pre-selected by default",
                 elementSelector: "#marketing-checkbox"
-            ),
-            DarkPattern(
+            ))
+        }
+        if let category = CategoryLoader.category(forId: "false_hierarchy") {
+            patterns.append(DarkPattern(
                 id: UUID(),
-                type: .visualManipulation,
+                category: category,
                 title: "Misleading Button Colors",
                 description: "Accept button is bright and prominent while decline is grayed out",
                 elementSelector: ".consent-buttons"
-            ),
-        ]
+            ))
+        }
+
+        return patterns
     }
 }

@@ -2,18 +2,10 @@ import Foundation
 
 struct DarkPattern: Identifiable, Equatable {
     let id: UUID
-    let type: PatternType
+    let category: DarkPatternCategory
     let title: String
     let description: String
     let elementSelector: String
-
-    enum PatternType: String, CaseIterable {
-        case hiddenDecline = "Hidden Decline"
-        case confusingLanguage = "Confusing Language"
-        case visualManipulation = "Visual Manipulation"
-        case forcedAction = "Forced Action"
-        case preselectedOptions = "Preselected Options"
-    }
 
     static func == (lhs: DarkPattern, rhs: DarkPattern) -> Bool {
         lhs.id == rhs.id
@@ -26,6 +18,7 @@ struct PatternModification: Identifiable {
     var status: Status
     var appliedJavaScript: String?
     var originalHTML: String?
+    var modifierLogs: String?  // Stores debug info from the modifier
 
     enum Status: Equatable {
         case pending

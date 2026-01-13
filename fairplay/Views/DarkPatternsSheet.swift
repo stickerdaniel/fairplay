@@ -11,8 +11,7 @@ struct DarkPatternsSheet: View {
                         DarkPatternRow(
                             pattern: pattern,
                             modification: viewModel.modifications[pattern.id],
-                            onToggle: { await viewModel.togglePattern(pattern) },
-                            onRetry: { await viewModel.retryModification(for: pattern) }
+                            onToggle: { await viewModel.togglePattern(pattern) }
                         )
                     }
                 } header: {
@@ -63,22 +62,26 @@ struct DarkPatternsSheet: View {
         }
         .task {
             // Simulate finding patterns
-            viewModel.patterns = [
-                DarkPattern(
+            var patterns: [DarkPattern] = []
+            if let category = CategoryLoader.category(forId: "hidden_information") {
+                patterns.append(DarkPattern(
                     id: UUID(),
-                    type: .hiddenDecline,
+                    category: category,
                     title: "Hidden Reject Button",
                     description: "The 'Reject All' button has low contrast and smaller text than 'Accept'",
                     elementSelector: ".cookie-banner .reject-btn"
-                ),
-                DarkPattern(
+                ))
+            }
+            if let category = CategoryLoader.category(forId: "confirmshaming") {
+                patterns.append(DarkPattern(
                     id: UUID(),
-                    type: .confusingLanguage,
-                    title: "Confusing Opt-Out",
+                    category: category,
+                    title: "Guilt Trip Text",
                     description: "Double negative language makes it unclear how to decline",
                     elementSelector: ".preferences-modal .opt-out"
-                ),
-            ]
+                ))
+            }
+            viewModel.patterns = patterns
             viewModel.scanState = .patternsFound
             for pattern in viewModel.patterns {
                 viewModel.modifications[pattern.id] = PatternModification(patternId: pattern.id)

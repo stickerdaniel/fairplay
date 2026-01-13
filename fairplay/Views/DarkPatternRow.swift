@@ -4,7 +4,8 @@ struct DarkPatternRow: View {
     let pattern: DarkPattern
     let modification: PatternModification?
     let onToggle: () async -> Void
-    let onRetry: () async -> Void
+
+    @State private var showLogs = false
 
     private var isApplied: Bool {
         modification?.status == .applied
@@ -19,6 +20,10 @@ struct DarkPatternRow: View {
             return true
         }
         return false
+    }
+
+    private var hasLogs: Bool {
+        modification?.modifierLogs != nil
     }
 
     var body: some View {
@@ -40,16 +45,17 @@ struct DarkPatternRow: View {
 
             Spacer()
 
-            if isFailed {
+            // Show logs button for failed or applied items with logs
+            if (isFailed || isApplied) && hasLogs {
                 Button {
-                    Task { await onRetry() }
+                    showLogs = true
                 } label: {
-                    Image(systemName: "arrow.clockwise")
+                    Image(systemName: "doc.text")
                         .font(.system(size: 14, weight: .medium))
                 }
                 .buttonStyle(.bordered)
                 .buttonBorderShape(.circle)
-                .tint(.orange)
+                .tint(isFailed ? .orange : .secondary)
             }
         }
         .padding(.vertical, 8)
@@ -60,6 +66,13 @@ struct DarkPatternRow: View {
         }
         .opacity(isApplying ? 0.7 : 1.0)
         .animation(.easeInOut(duration: 0.2), value: modification?.status)
+        .sheet(isPresented: $showLogs) {
+            LogsSheet(
+                title: pattern.title,
+                category: pattern.category.name,
+                logs: modification?.modifierLogs ?? "No logs available"
+            )
+        }
     }
 
     @ViewBuilder
@@ -87,7 +100,7 @@ struct DarkPatternRow: View {
     }
 
     private var patternTypeBadge: some View {
-        Text(pattern.type.rawValue)
+        Text(pattern.category.name)
             .font(.caption2.weight(.medium))
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
@@ -96,60 +109,110 @@ struct DarkPatternRow: View {
     }
 
     private var badgeColor: Color {
-        switch pattern.type {
-        case .hiddenDecline:
-            return .red
-        case .confusingLanguage:
-            return .orange
-        case .visualManipulation:
+        switch pattern.category.id {
+        case "false_hierarchy":
             return .purple
-        case .forcedAction:
+        case "hidden_information":
+            return .red
+        case "confirmshaming":
+            return .orange
+        case "forced_action":
             return .pink
-        case .preselectedOptions:
+        case "trick_questions":
+            return .yellow
+        case "preselected_options":
             return .blue
+        default:
+            return .gray
         }
+    }
+}
+
+// MARK: - Logs Sheet
+
+struct LogsSheet: View {
+    let title: String
+    let category: String
+    let logs: String
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                Text(logs)
+                    .font(.system(.caption, design: .monospaced))
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .navigationTitle("Modifier Logs")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    VStack(spacing: 2) {
+                        Text(title)
+                            .font(.headline)
+                        Text(category)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
     }
 }
 
 #Preview {
     List {
-        DarkPatternRow(
-            pattern: DarkPattern(
-                id: UUID(),
-                type: .hiddenDecline,
-                title: "Hidden Reject Button",
-                description: "The reject button has low contrast",
-                elementSelector: ".btn"
-            ),
-            modification: nil,
-            onToggle: {},
-            onRetry: {}
-        )
+        if let category = CategoryLoader.category(forId: "hidden_information") {
+            DarkPatternRow(
+                pattern: DarkPattern(
+                    id: UUID(),
+                    category: category,
+                    title: "Hidden Reject Button",
+                    description: "The reject button has low contrast",
+                    elementSelector: ".btn"
+                ),
+                modification: nil,
+                onToggle: {}
+            )
+        }
 
-        DarkPatternRow(
-            pattern: DarkPattern(
-                id: UUID(),
-                type: .confusingLanguage,
-                title: "Confusing Text",
-                description: "Double negative language",
-                elementSelector: ".text"
-            ),
-            modification: PatternModification(patternId: UUID(), status: .applied),
-            onToggle: {},
-            onRetry: {}
-        )
+        if let category = CategoryLoader.category(forId: "confirmshaming") {
+            DarkPatternRow(
+                pattern: DarkPattern(
+                    id: UUID(),
+                    category: category,
+                    title: "Guilt Trip Text",
+                    description: "No, I don't want to save money",
+                    elementSelector: ".text"
+                ),
+                modification: PatternModification(patternId: UUID(), status: .applied),
+                onToggle: {}
+            )
+        }
 
-        DarkPatternRow(
-            pattern: DarkPattern(
-                id: UUID(),
-                type: .visualManipulation,
-                title: "Visual Trick",
-                description: "Misleading colors",
-                elementSelector: ".colors"
-            ),
-            modification: PatternModification(patternId: UUID(), status: .failed("Error")),
-            onToggle: {},
-            onRetry: {}
-        )
+        if let category = CategoryLoader.category(forId: "false_hierarchy") {
+            var mod = PatternModification(patternId: UUID(), status: .failed("JS execution error"))
+            let _ = { mod.modifierLogs = "Sample logs here..." }()
+            DarkPatternRow(
+                pattern: DarkPattern(
+                    id: UUID(),
+                    category: category,
+                    title: "Visual Hierarchy",
+                    description: "Unequal button styling",
+                    elementSelector: ".buttons"
+                ),
+                modification: mod,
+                onToggle: {}
+            )
+        }
     }
 }

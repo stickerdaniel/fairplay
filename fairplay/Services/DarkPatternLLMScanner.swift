@@ -141,10 +141,14 @@ final class DarkPatternLLMScanner: DarkPatternScannerProtocol {
         do {
             let decoded = try JSONDecoder().decode(LLMReasoningResponse.self, from: data)
             print("[DarkPatternLLMScanner] Reasoning: \(decoded.reasoning.prefix(200))...")
-            let patterns = decoded.patterns.map { response in
-                DarkPattern(
+            let patterns = decoded.patterns.compactMap { response -> DarkPattern? in
+                guard let category = mapToCategory(response.type) else {
+                    print("[DarkPatternLLMScanner] Unknown category: \(response.type)")
+                    return nil
+                }
+                return DarkPattern(
                     id: UUID(),
-                    type: mapPatternType(response.type),
+                    category: category,
                     title: response.title,
                     description: response.description,
                     elementSelector: response.selector
@@ -195,26 +199,38 @@ final class DarkPatternLLMScanner: DarkPatternScannerProtocol {
         return result
     }
 
-    nonisolated private func mapPatternType(_ typeString: String) -> DarkPattern.PatternType {
-        let lowercased = typeString.lowercased()
-
-        // Map paper's pattern categories to our types
-        if lowercased.contains("false hierarchy") || lowercased.contains("hierarchy") {
-            return .visualManipulation
-        } else if lowercased.contains("hidden") {
-            return .hiddenDecline
-        } else if lowercased.contains("confirmshaming") || lowercased.contains("shame") {
-            return .confusingLanguage
-        } else if lowercased.contains("forced") || lowercased.contains("countdown") ||
-                  lowercased.contains("timer") || lowercased.contains("urgency") {
-            return .forcedAction
-        } else if lowercased.contains("trick") || lowercased.contains("question") {
-            return .confusingLanguage
-        } else if lowercased.contains("preselect") {
-            return .preselectedOptions
+    nonisolated private func mapToCategory(_ typeString: String) -> DarkPatternCategory? {
+        // First try exact name match
+        if let category = CategoryLoader.category(forName: typeString) {
+            return category
         }
 
-        return .visualManipulation // Default fallback
+        // Fallback: fuzzy matching for LLM variations
+        let lowercased = typeString.lowercased()
+        for category in CategoryLoader.shared {
+            if lowercased.contains(category.name.lowercased()) ||
+               category.name.lowercased().contains(lowercased) {
+                return category
+            }
+        }
+
+        // Additional fuzzy matches for common LLM outputs
+        if lowercased.contains("hierarchy") {
+            return CategoryLoader.category(forName: "False Hierarchy")
+        } else if lowercased.contains("hidden") {
+            return CategoryLoader.category(forName: "Hidden Information")
+        } else if lowercased.contains("shame") || lowercased.contains("guilt") {
+            return CategoryLoader.category(forName: "Confirmshaming")
+        } else if lowercased.contains("forced") || lowercased.contains("urgency") ||
+                  lowercased.contains("countdown") || lowercased.contains("timer") {
+            return CategoryLoader.category(forName: "Forced Action")
+        } else if lowercased.contains("trick") || lowercased.contains("confus") {
+            return CategoryLoader.category(forName: "Trick Questions")
+        } else if lowercased.contains("preselect") || lowercased.contains("checkbox") {
+            return CategoryLoader.category(forName: "Preselected Options")
+        }
+
+        return nil
     }
 }
 

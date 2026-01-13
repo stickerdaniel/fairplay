@@ -3,39 +3,45 @@ import Foundation
 // MARK: - Scanner Prompts
 
 enum ScannerPrompts {
-    static let defaultSystem = """
-    You are an expert at identifying dark patterns in web interfaces. Only flag clear manipulation.
+    static var defaultSystem: String {
+        let categoryList = CategoryLoader.shared
+            .enumerated()
+            .map { "\($0.offset + 1). \($0.element.name): \($0.element.scanDescription)" }
+            .joined(separator: "\n")
 
-    Categories (mutually exclusive):
-    1. False Hierarchy: Unequal button styling - accept is large/bright, decline is small/muted (both visible)
-    2. Hidden Information: Critical info concealed - requires clicking, scrolling, or nearly invisible
-    3. Confirmshaming: Guilt-trip decline text - e.g. "No, I don't want to save money"
-    4. Forced Action: Fake urgency - countdown timers, "Only 3 left!", scarcity messages
-    5. Trick Questions: Confusing wording - double negatives like "Uncheck to not receive emails"
-    6. Preselected Options: Pre-checked checkboxes for marketing or data sharing
+        return """
+        You are an expert at identifying dark patterns in web interfaces. Only flag clear manipulation.
 
-    Rules:
-    - DO NOT invent elements not in the HTML
-    - When in doubt, return empty patterns array
-    """
+        Categories (mutually exclusive):
+        \(categoryList)
 
-    static let defaultUser = """
-    Analyze this HTML for dark patterns. Return JSON with reasoning and patterns array.
+        Rules:
+        - DO NOT invent elements not in the HTML
+        - When in doubt, return empty patterns array
+        """
+    }
 
-    Format: {"reasoning": "...", "patterns": [{"type": "...", "title": "...", "description": "...", "selector": "...", "evidence": "..."}]}
+    static var defaultUser: String {
+        let typeList = CategoryLoader.shared.map { "\"\($0.name)\"" }.joined(separator: ", ")
 
-    Types: "False Hierarchy", "Hidden Information", "Confirmshaming", "Forced Action", "Trick Question", "Preselected Options"
+        return """
+        Analyze this HTML for dark patterns. Return JSON with reasoning and patterns array.
 
-    Rules:
-    - Only report patterns with evidence from the HTML
-    - If none found: {"reasoning": "...", "patterns": []}
-    - Return ONLY valid JSON
+        Format: {"reasoning": "...", "patterns": [{"type": "...", "title": "...", "description": "...", "selector": "...", "evidence": "..."}]}
 
-    HTML:
-    ```html
-    %HTML%
-    ```
-    """
+        Types: \(typeList)
+
+        Rules:
+        - Only report patterns with evidence from the HTML
+        - If none found: {"reasoning": "...", "patterns": []}
+        - Return ONLY valid JSON
+
+        HTML:
+        ```html
+        %HTML%
+        ```
+        """
+    }
 }
 
 // MARK: - Modifier Prompts
@@ -54,14 +60,6 @@ enum ModifierPrompts {
     5. Never add new functionalities
     6. Never change facts or numbers
     7. Never invert the meaning of a statement
-
-    FIXING STRATEGIES:
-    - False Hierarchy: Equalize button styling (same size, color, padding, font-weight)
-    - Hidden Information: Increase visibility (opacity, contrast, size)
-    - Confirmshaming: Replace guilt-trip text with neutral alternatives (e.g., "No thanks" instead of "No, I hate saving money")
-    - Forced Action: Hide or remove countdown timers and urgency messages
-    - Trick Questions: Simplify confusing wording if possible via textContent changes
-    - Preselected Options: Uncheck pre-selected checkboxes
 
     Return ONLY executable JavaScript code. No explanations, no markdown code blocks.
     Use document.querySelector/querySelectorAll with the provided selector.

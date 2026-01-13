@@ -28,7 +28,7 @@ final class MockPatternModifier: PatternModifierProtocol, Sendable {
 
         // Return mock modified HTML
         // In real implementation, this would be the LLM-generated fix
-        return "<!-- FairPlay Modified: \(pattern.type.rawValue) -->\n\(html)"
+        return "<!-- FairPlay Modified: \(pattern.category.name) -->\n\(html)"
     }
 
     func revert(pattern: DarkPattern, originalHTML: String) async throws -> String {

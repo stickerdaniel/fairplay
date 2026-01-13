@@ -1,0 +1,40 @@
+{
+  "categories": [
+    {
+      "id": "false_hierarchy",
+      "name": "False Hierarchy",
+      "scanDescription": "Unequal button styling - accept is large/bright, decline is small/muted. IMPORTANT: Return the selector of the LESS prominent element (the decline/reject button that needs fixing)",
+      "fixInstructions": "Style the less prominent button to match the prominent one: same size, padding, font-weight, and colors. Example: el.style.cssText = 'padding: 12px 24px; font-size: 16px; font-weight: bold; background: #007AFF; color: white;'"
+    },
+    {
+      "id": "hidden_information",
+      "name": "Hidden Information",
+      "scanDescription": "Critical info concealed - requires clicking, scrolling, or nearly invisible",
+      "fixInstructions": "Increase visibility: set opacity to 1, increase font-size, improve contrast. Example: el.style.cssText = 'opacity: 1; font-size: 14px; color: #333;'"
+    },
+    {
+      "id": "confirmshaming",
+      "name": "Confirmshaming",
+      "scanDescription": "Guilt-trip decline text - e.g. \"No, I don't want to save on future purchases\"",
+      "fixInstructions": "CRITICAL: Replace ONLY the guilt-trip TEXT, keep buttons/links functional. If element has NO children: el.textContent = 'No thanks'. If element HAS children (inputs/icons): use el.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.trim()) n.textContent = 'No thanks'; }); NEVER use remove() or display:none on buttons."
+    },
+    {
+      "id": "forced_action",
+      "name": "Forced Action",
+      "scanDescription": "Fake urgency - countdown timers, \"Only 3 left!\", scarcity messages",
+      "fixInstructions": "Hide urgency elements (timers, scarcity messages) but don't remove action buttons. Example: el.style.display = 'none';"
+    },
+    {
+      "id": "trick_questions",
+      "name": "Trick Questions",
+      "scanDescription": "Confusing wording - double negatives like \"Uncheck to not receive emails\"",
+      "fixInstructions": "CRITICAL: (1) PRESERVE SEMANTICS - reword for clarity but keep EXACT same meaning. (2) Only modify TEXT NODES: el.childNodes.forEach(n => { if (n.nodeType === 3) n.textContent = '...'; }); Example: 'Uncheck to not opt out' = checked means opt-out → reword to 'Opt out of marketing' (checkbox meaning unchanged). NEVER invert the logic."
+    },
+    {
+      "id": "preselected_options",
+      "name": "Preselected Options",
+      "scanDescription": "Pre-checked checkboxes for marketing or data sharing",
+      "fixInstructions": "Uncheck pre-selected checkboxes. Example: el.checked = false;"
+    }
+  ]
+}

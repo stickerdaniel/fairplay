@@ -133,23 +133,40 @@ final class DarkPatternViewModel {
         modifications[pattern.id] = modification
 
         do {
+            print("[ViewModel] Generating fix for: \(pattern.title) (\(pattern.category.name))")
             let jsCode = try await modifier.modify(pattern: pattern, html: currentPageHTML)
+
+            // Capture logs from modifier
+            if let llmModifier = modifier as? DarkPatternLLMModifier {
+                modification.modifierLogs = llmModifier.lastLogs
+            }
 
             // Execute the JavaScript in the WebView
             if let executeJS = executeJavaScript {
+                print("[ViewModel] Executing JS in WebView...")
                 try await executeJS(jsCode)
+                print("[ViewModel] JS execution succeeded")
+            } else {
+                print("[ViewModel] WARNING: No executeJavaScript callback set!")
             }
 
             modification.status = .applied
             modification.appliedJavaScript = jsCode
             modifications[pattern.id] = modification
 
-            print("[DarkPatternViewModel] Applied modification for: \(pattern.title)")
+            print("[ViewModel] Applied modification for: \(pattern.title)")
 
         } catch {
+            // Capture logs even on failure
+            if let llmModifier = modifier as? DarkPatternLLMModifier {
+                modification.modifierLogs = llmModifier.lastLogs + "\n\n=== ERROR ===\n\(error.localizedDescription)"
+            } else {
+                modification.modifierLogs = "Error: \(error.localizedDescription)"
+            }
+
             modification.status = .failed(error.localizedDescription)
             modifications[pattern.id] = modification
-            print("[DarkPatternViewModel] Failed to apply modification: \(error)")
+            print("[ViewModel] FAILED to apply modification: \(error)")
         }
     }
 

@@ -6,6 +6,9 @@ import Foundation
 final class DarkPatternLLMModifier: PatternModifierProtocol {
     private let llmService: LLMService
 
+    /// Last modification logs for debugging
+    private(set) var lastLogs: String = ""
+
     private var systemPrompt: String {
         UserDefaults.standard.string(forKey: "modifierSystemPrompt") ?? ModifierPrompts.defaultSystem
     }
@@ -21,20 +24,44 @@ final class DarkPatternLLMModifier: PatternModifierProtocol {
         let prompt = """
         Fix this dark pattern:
 
-        Type: \(pattern.type.rawValue)
+        Type: \(pattern.category.name)
         Title: \(pattern.title)
         Description: \(pattern.description)
         CSS Selector: \(pattern.elementSelector)
+
+        SPECIFIC FIX INSTRUCTIONS FOR \(pattern.category.name.uppercased()):
+        \(pattern.category.fixInstructions)
 
         HTML context:
         ```html
         \(String(html.prefix(htmlLimit)))
         ```
 
-        Generate JavaScript to fix this pattern. Remember: don't remove elements, just make them fair.
+        Generate JavaScript following the instructions above.
         """
 
+        // Build logs
+        var logs = """
+        === MODIFY REQUEST ===
+        Category: \(pattern.category.name)
+        Title: \(pattern.title)
+        Selector: \(pattern.elementSelector)
+
+        Fix Instructions:
+        \(pattern.category.fixInstructions)
+
+        """
+
+        print("[Modifier] \(logs)")
+
         let response = try await llmService.analyze(content: prompt, systemPrompt: systemPrompt)
+
+        logs += """
+
+        === LLM RESPONSE ===
+        \(response)
+
+        """
 
         // Clean up the response - remove markdown code blocks if present
         var jsCode = response.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -50,7 +77,17 @@ final class DarkPatternLLMModifier: PatternModifierProtocol {
             jsCode = String(jsCode.dropLast(3))
         }
 
-        return jsCode.trimmingCharacters(in: .whitespacesAndNewlines)
+        let finalCode = jsCode.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        logs += """
+        === FINAL JS CODE ===
+        \(finalCode)
+        """
+
+        lastLogs = logs
+        print("[Modifier] Final JS:\n\(finalCode)")
+
+        return finalCode
     }
 
     func revert(pattern: DarkPattern, originalHTML: String) async throws -> String {
