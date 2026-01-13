@@ -56,7 +56,7 @@ Run js that applies the changes
 
 **LLM Backend:** [LocalLLMClient](https://github.com/tattn/LocalLLMClient) provides a unified interface for:
 - Apple Foundation Models (on-device)
-- llama.cpp with GGUF models
+- llama.cpp with GGUF models (tried but not compatible with MLX + worse performance)
 - MLX models
 
 For larger models, add `com.apple.developer.kernel.increased-memory-limit` to your entitlements.
