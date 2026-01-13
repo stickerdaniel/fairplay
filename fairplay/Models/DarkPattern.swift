@@ -24,7 +24,7 @@ struct PatternModification: Identifiable {
     let id: UUID
     let patternId: UUID
     var status: Status
-    var appliedHTML: String?
+    var appliedJavaScript: String?
     var originalHTML: String?
 
     enum Status: Equatable {

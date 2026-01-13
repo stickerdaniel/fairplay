@@ -103,6 +103,20 @@ struct ContentView: View {
             .safeAreaPadding(.top)
         }
         .onAppear {
+            // Wire JavaScript execution to WebPage
+            darkPatternVM.executeJavaScript = { [page] jsCode in
+                _ = try await page.callJavaScript(jsCode)
+            }
+
+            // Wire HTML restoration (for revert without reload)
+            darkPatternVM.setPageHTML = { [page] html in
+                let escaped = html
+                    .replacingOccurrences(of: "\\", with: "\\\\")
+                    .replacingOccurrences(of: "`", with: "\\`")
+                    .replacingOccurrences(of: "$", with: "\\$")
+                _ = try await page.callJavaScript("document.open(); document.write(`\(escaped)`); document.close();")
+            }
+
             loadURL()
         }
         .onChange(of: page.url) { _, newURL in
@@ -189,10 +203,17 @@ struct ContentView: View {
                         .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(.secondary)
                 } else if page.isLoading {
-                    // Page loading - show hourglass
-                    Image(systemName: "hourglass")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(.secondary)
+                    if shouldExcludeFromScanning(page.url) {
+                        // Loading excluded page - show pause
+                        Image(systemName: "pause.circle.fill")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    } else {
+                        // Loading normal page - show hourglass
+                        Image(systemName: "hourglass")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    }
                 } else {
                     switch darkPatternVM.scanState {
                     case .idle, .scanning:

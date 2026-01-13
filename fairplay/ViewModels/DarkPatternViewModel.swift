@@ -22,6 +22,11 @@ final class DarkPatternViewModel {
     private let scanner: DarkPatternScannerProtocol
     private let modifier: PatternModifierProtocol
     private var currentPageHTML: String = ""
+    private var originalPageHTML: String = ""  // Pristine HTML before any patches
+
+    // Callbacks for WebView interaction (set by ContentView)
+    var executeJavaScript: ((String) async throws -> Void)?
+    var setPageHTML: ((String) async throws -> Void)?
 
     init(
         scanner: DarkPatternScannerProtocol = MockDarkPatternScanner(),
@@ -35,6 +40,7 @@ final class DarkPatternViewModel {
         // Reset state for new page
         resetForNewPage()
         currentPageHTML = html
+        originalPageHTML = html  // Cache for revert
         scanState = .scanning
         originalHTMLSize = html.count
 
@@ -127,41 +133,56 @@ final class DarkPatternViewModel {
         modifications[pattern.id] = modification
 
         do {
-            let modifiedHTML = try await modifier.modify(pattern: pattern, html: currentPageHTML)
+            let jsCode = try await modifier.modify(pattern: pattern, html: currentPageHTML)
+
+            // Execute the JavaScript in the WebView
+            if let executeJS = executeJavaScript {
+                try await executeJS(jsCode)
+            }
+
             modification.status = .applied
-            modification.appliedHTML = modifiedHTML
+            modification.appliedJavaScript = jsCode
             modifications[pattern.id] = modification
 
-            // In real implementation, inject the modified HTML back into the page
-            print("Applied modification for: \(pattern.title)")
+            print("[DarkPatternViewModel] Applied modification for: \(pattern.title)")
 
         } catch {
             modification.status = .failed(error.localizedDescription)
             modifications[pattern.id] = modification
-            print("Failed to apply modification: \(error)")
+            print("[DarkPatternViewModel] Failed to apply modification: \(error)")
         }
     }
 
     private func revertModification(for pattern: DarkPattern) async {
-        guard var modification = modifications[pattern.id],
-              let originalHTML = modification.originalHTML else { return }
+        guard var modification = modifications[pattern.id] else { return }
 
         modification.status = .applying
         modifications[pattern.id] = modification
 
         do {
-            _ = try await modifier.revert(pattern: pattern, originalHTML: originalHTML)
+            // Step 1: Restore original HTML (no network fetch)
+            if let setHTML = setPageHTML {
+                try await setHTML(originalPageHTML)
+            }
+
+            // Step 2: Mark this pattern as pending (reverted)
             modification.status = .pending
-            modification.appliedHTML = nil
+            modification.appliedJavaScript = nil
             modifications[pattern.id] = modification
 
-            print("Reverted modification for: \(pattern.title)")
+            // Step 3: Re-apply all OTHER patterns that are still applied
+            for (_, mod) in modifications where mod.status == .applied {
+                if let jsCode = mod.appliedJavaScript, let executeJS = executeJavaScript {
+                    try await executeJS(jsCode)
+                }
+            }
+
+            print("[DarkPatternViewModel] Reverted: \(pattern.title), re-applied \(appliedCount) other patches")
 
         } catch {
-            // If revert fails, keep it as applied
             modification.status = .applied
             modifications[pattern.id] = modification
-            print("Failed to revert modification: \(error)")
+            print("[DarkPatternViewModel] Failed to revert: \(error)")
         }
     }
 
