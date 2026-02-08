@@ -28,12 +28,10 @@ enum LLMBackend: String, CaseIterable {
         }
     }
 
-    /// Modifier HTML prefix limit
-    var modifierHTMLLimit: Int {
-        switch self {
-        case .foundationModels: return 3000
-        case .mlx: return 32000  // Larger context for modifications
-        }
+    /// Modifier HTML chunk sizes (largest to smallest for fallback)
+    /// Uses the same sizes as the scanner for consistency
+    var modifierChunkSizes: [Int] {
+        scannerChunkSizes
     }
 
     /// Whether this backend requires a model download

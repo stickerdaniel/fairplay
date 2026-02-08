@@ -18,6 +18,8 @@ final class DarkPatternViewModel {
     private(set) var usedBackend: LLMBackend = .foundationModels
     private(set) var usedMLXModel: MLXModel? = nil
     private(set) var chunkAttempts: [ChunkAttempt] = []
+    /// The chunk size that succeeded during scanning, reused by the modifier
+    private(set) var successfulChunkSize: Int?
 
     private let scanner: DarkPatternScannerProtocol
     private let modifier: PatternModifierProtocol
@@ -72,9 +74,10 @@ final class DarkPatternViewModel {
                 }
             }
 
-            // Capture reasoning from scanner
+            // Capture reasoning and successful chunk size from scanner
             if let llmScanner = scanner as? DarkPatternLLMScanner {
                 reasoning = llmScanner.lastReasoning
+                successfulChunkSize = llmScanner.successfulChunkSize
             }
 
             patterns = foundPatterns
@@ -134,7 +137,7 @@ final class DarkPatternViewModel {
 
         do {
             print("[ViewModel] Generating fix for: \(pattern.title) (\(pattern.category.name))")
-            let jsCode = try await modifier.modify(pattern: pattern, html: currentPageHTML)
+            let jsCode = try await modifier.modify(pattern: pattern, html: currentPageHTML, chunkSize: successfulChunkSize)
 
             // Capture logs from modifier
             if let llmModifier = modifier as? DarkPatternLLMModifier {
@@ -216,6 +219,7 @@ final class DarkPatternViewModel {
         usedBackend = .foundationModels
         usedMLXModel = nil
         chunkAttempts = []
+        successfulChunkSize = nil
     }
 
     // Computed property for applied count (useful for UI)
