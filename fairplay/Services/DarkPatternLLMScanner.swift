@@ -43,6 +43,8 @@ final class DarkPatternLLMScanner: DarkPatternScannerProtocol {
     private(set) var lastRawResponse: String = ""
     private(set) var lastReasoning: String = ""
     private(set) var chunkAttempts: [ChunkAttempt] = []
+    /// The chunk size that succeeded during scanning, reused by the modifier
+    private(set) var successfulChunkSize: Int?
 
     private var systemPrompt: String {
         UserDefaults.standard.string(forKey: "scannerSystemPrompt") ?? ScannerPrompts.defaultSystem
@@ -66,6 +68,7 @@ final class DarkPatternLLMScanner: DarkPatternScannerProtocol {
         var lastError: Error?
         lastRawResponse = ""
         chunkAttempts = []
+        successfulChunkSize = nil
 
         for chunkSize in chunkSizes {
             let truncatedHTML = String(html.prefix(chunkSize))
@@ -89,6 +92,9 @@ final class DarkPatternLLMScanner: DarkPatternScannerProtocol {
                 if let index = chunkAttempts.firstIndex(where: { $0.id == attempt.id }) {
                     chunkAttempts[index].status = .succeeded
                 }
+
+                // Store successful chunk size for modifier reuse
+                successfulChunkSize = chunkSize
 
                 // Report chunk success and response received
                 await onProgress?(.chunkCompleted(size: chunkSize, succeeded: true))

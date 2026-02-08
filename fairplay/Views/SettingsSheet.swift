@@ -52,8 +52,8 @@ struct SettingsSheet: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    LabeledContent("Modifier HTML Limit") {
-                        Text("\(backend.modifierHTMLLimit.formatted()) chars")
+                    LabeledContent("Modifier Chunk Sizes") {
+                        Text(backend.modifierChunkSizes.map { "\($0 / 1000)K chars" }.joined(separator: ", "))
                             .foregroundStyle(.secondary)
                     }
 

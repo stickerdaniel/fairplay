@@ -17,9 +17,9 @@ final class DarkPatternLLMModifier: PatternModifierProtocol {
         self.llmService = llmService
     }
 
-    func modify(pattern: DarkPattern, html: String) async throws -> String {
-        // HTML limit is backend-specific (llama has larger context than Foundation Models)
-        let htmlLimit = LLMService.backend.modifierHTMLLimit
+    func modify(pattern: DarkPattern, html: String, chunkSize: Int? = nil) async throws -> String {
+        // Reuse the chunk size that succeeded during scanning, or fall back to largest modifier size
+        let htmlLimit = chunkSize ?? LLMService.backend.modifierChunkSizes.first ?? 3000
 
         let prompt = """
         Fix this dark pattern:

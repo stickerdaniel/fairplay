@@ -1,7 +1,7 @@
 import Foundation
 
 protocol PatternModifierProtocol: Sendable {
-    func modify(pattern: DarkPattern, html: String) async throws -> String
+    func modify(pattern: DarkPattern, html: String, chunkSize: Int?) async throws -> String
     func revert(pattern: DarkPattern, originalHTML: String) async throws -> String
 }
 
@@ -17,7 +17,7 @@ final class MockPatternModifier: PatternModifierProtocol, Sendable {
         }
     }
 
-    func modify(pattern: DarkPattern, html: String) async throws -> String {
+    func modify(pattern: DarkPattern, html: String, chunkSize: Int? = nil) async throws -> String {
         // Simulate 1-3 second modification time
         try await Task.sleep(for: .seconds(Double.random(in: 1...3)))
 
